@@ -11,6 +11,8 @@ router.get('/create', postsController.create);
 router.get('/:slug/download', postsController.downloadImage);
 //store con multer 
 router.post('/', multer().none(), postsController.store);
+// rotta per destroy
+router.post('/:slug/destroy', postsController.destroy);
 
 
 

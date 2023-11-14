@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const posts = require("../db/db.js");
+const posts = require("../db/db.json");
+const { kebabCase } = require("lodash");
 
 
 
@@ -67,21 +68,64 @@ function downloadImage(req, res) {
 }
 //funzione per store 
 function store(req, res) {
-    console.log(req.body);
-    //leggo il db 
-    const posts = require("../db/db.js");
-    //aggiungo post al db 
-    posts.push({
-        ...req.body,
-    });
+    res.format({
+        html: () => {
+            res.send("sei finito qua")
+        },
+        default: () => {
+            posts.push({
+                ...req.body,
+                slug: kebabCase(req.body.title),
+                updatedAt: new Date().toISOString()
+            });
 
+            const json = JSON.stringify(posts, null, 2);
+
+            fs.writeFileSync(path.resolve(__dirname, "..", "db", "db.json"), json)
+
+            res.json(posts[posts.length - 1]);
+        }
+    })
+
+};
+
+//funzione per delete
+function destroy(req, res) {
+    res.format({
+        html: () => {
+            res.redirect("/");
+        },
+        default: () => {
+            const post = findOrFail(req, res);
+
+            const postIndex = posts.findIndex((_post) => _post.slug == post.slug);
+
+            posts.splice(postIndex, 1);
+            res.send("Post eliminato");
+
+        }
+    })
 }
 
+function findOrFail(req, res) {
+
+    const postSlug = req.params.slug;
+
+    const post = posts.find((post) => post.slug == postSlug);
+
+    if (!post) {
+        res.status(404).send(`Post con slug ${postSlug} non trovato!`);
+        return;
+    }
+
+    return post;
+}
 
 module.exports = {
     index,
     create,
     store,
+    destroy,
     downloadImage
 
 }
